@@ -2,10 +2,10 @@
 **A local, DIY smart garage controller built on the Raspberry Pi Pico 2 W.**
 
 > [!IMPORTANT]
-> GarageLink needs an existing HomeAssistant setup to function. You may need extra devices other than outlined in the ReadME.
+> GarageLink needs an existing HomeAssistant setup to function. You may need additional devices beyond those outlined in the ReadMe.
 
 GarageLink is a Home Assistant–integrated garage controller that simulates a wall button press using a relay.  
-It connects over WiFi, publishes via MQTT, and adds movement-aware status correction.
+It connects over WiFi, publishes via MQTT, and adds movement-aware status correction (optional).
 
 ## Overview
 
@@ -15,51 +15,40 @@ It works by momentarily bridging the same two terminals used by the wall button,
 
 Optional sensors (such as vibration detection) can be used to improve state awareness.
 
-Key Idea: **Have a local, always-available, easy setup, way to open and close a garage door.**
-
 ---
 
-# Features
+## Hardware Requirements
 
-- MQTT auto-discovery for Home Assistant
-- Native `cover.*` entity support
-- Multi-door capable (depending on relay channels)
-- Optional vibration-based movement detection
-- Arrival notifications with actionable buttons
-- Manual state correction buttons
-- Fully local operation
-
----
-
-# Hardware Requirements
-
-## 1. Raspberry Pi Pico 2 W
+### 1. Raspberry Pi Pico 2 W
 - Built-in WiFi
-- Runs MicroPython
 - Controls relays and sensors
+- Connects everything
 
-## 2. 5V Relay Module (4-channel recommended)
-- Used to simulate wall button press
+### 2. 5V Relay Module (2 Channel Preferred)
+- Used to simulate a wall button press
 - COM and NO terminals only
 - Optocoupled boards preferred
 
-## 3. Low-Voltage Wire (18/2 or 22/2 solid copper)
+### 3. Low-Voltage Wire (18/2 or 22/2 solid copper)
 - Doorbell or thermostat wire recommended
-- Used to connect relay to opener terminals
+- Used to connect the relay to the opener terminals
+- **Highly** recommended to mount your GarageLink away from the main opener as the WiFi on GarageLink interferes with the RF signal your garage remote uses and your car uses.
 
-## 4. Optional Sensors
+### 4. Optional Sensors
 - SW-420 vibration sensor
-- Reed switch (magnetic contact)
 
 ## 5. 5V Power Supply
 - USB wall adapter
-- Do not power from opener logic board
+- Check if you have a wall outlet near your garage; you probably do. If not, try not to use a battery pack as the voltage is reliable and run time.
 
 ---
 
-# Wiring
+## Wiring
 
-## Pico → Relay
+> [!CAUTION]
+> Always disconnect the power to your opener before installation.
+
+### Pico → Relay
 
 | Pico Pin | Relay Pin |
 |----------|-----------|
@@ -68,28 +57,27 @@ Key Idea: **Have a local, always-available, easy setup, way to open and close a 
 | GND      | GND       |
 | VSYS     | VCC (5V)  |
 
+The "IN" pin corresponds to the relay you use on your board.
 Adjust GPIO pins as needed in the code.
 
 ---
 
-## Relay → Garage Opener
+### Relay → Garage Opener
 
 For each door:
 
 | Relay Terminal | Opener Terminal |
 |----------------|-----------------|
-| COM            | Wall terminal 1 |
-| NO             | Wall terminal 2 |
+| COM            | Wall terminal   |
+| NO             | Wall terminal   |
 
 - Leave NC unused.
 - Keep existing wall button wires connected.
-- You are wiring in parallel.
-
-Polarity does not matter.
+- It doesn't matter which order, but which terminals do. Check where your garage's wall buttons connect.
 
 ---
 
-## Optional Vibration Sensor
+### Optional Vibration Sensor
 
 | Sensor Pin | Pico Pin |
 |------------|----------|
@@ -101,15 +89,15 @@ Used only for movement detection, not for triggering the relay.
 
 ---
 
-# Software Setup
+## Software Setup
 
-## 1. Install Thonny
+### 1. Install Thonny
 https://thonny.org
 
-## 2. Install MicroPython on Pico
+### 2. Install MicroPython on Pico
 - Select interpreter: MicroPython (RP2040)
 - Install/update firmware
 
-## 3. Upload Files
+### 3. Upload Files
 - Upload `garage.py`
 - Create `main.py` containing:
