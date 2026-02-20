@@ -108,12 +108,16 @@ https://thonny.org
 - Paste in `garage.py`
 - Save it to the Pico as `garage.py`
   
-- Create `main.py` containing: `import garage.py`
+- Paste in `main.py`
+- Save it to the Pico as `main.py`
 > GarageLink will now auto-run on boot.
 
 ## Home Assistant Setup
 
 GarageLink uses MQTT discovery.
+
+>[!IMPORTANT]
+>Make a new user in HomeAssistant for MQTT. You will use its details for the MQTT config.
 
 Requirements:
 - MQTT broker running
@@ -123,7 +127,7 @@ Requirements:
 Once connected, the following entities should appear:
 - `cover.garage_door`
 - Availability sensor (if applicable)
-- Optional sync buttons
+- Sync buttons
 
 ---
 
@@ -137,3 +141,112 @@ The table is what setting, and then which variable that setting is.
 | Wifi Password                               | WIFI_PASS = “” |   
 | MQTT Host (Usually HomeAssistant IP)        | MQTT_BROKER=""            |
 | MQTT Username         | MQTT_USER=""           |
+| MQTT Password | MQTT_PASS=""
+
+>[!NOTE]
+>Make sure all of the necessary fields have been edited in `garage.py`
+
+---
+
+## LED Status Behavior
+
+GarageLink includes a single status LED to communicate system state without needing to check Home Assistant.
+
+The LED provides real-time feedback about:
+- WiFi status
+- MQTT connection status
+- Door state
+- Movement
+- Errors
+
+---
+
+## LED States
+
+### Solid ON (Green)
+System is healthy.
+
+- WiFi connected
+- MQTT connected
+- Door state is known
+- No errors present
+
+If the door is fully closed, the LED will remain solid.
+
+---
+
+### Slow Blink (500ms on / 500ms off)
+Door is currently moving.
+
+States:
+- `OPENING`
+- `CLOSING`
+
+This indicates an active relay trigger or detected movement.
+
+---
+
+### Brief Off Pulse Every Few Seconds
+Door is OPEN.
+
+The LED stays mostly on but briefly turns off at intervals to indicate:
+- System healthy
+- Door not closed
+
+This provides a subtle reminder that the garage is open.
+
+---
+
+### Double Blink Pattern (Two quick flashes, pause)
+Door state is unknown or manually stopped.
+
+States:
+- `UNKNOWN`
+- `STOPPED`
+
+This usually happens:
+- After reboot
+- Before state sync
+- If movement detection is inconclusive
+
+---
+
+### LED OFF
+System is not connected to MQTT.
+
+Possible causes:
+- WiFi disconnected
+- MQTT broker unavailable
+- Reconnecting state
+
+If reconnecting, the LED may perform short periodic flashes.
+
+---
+
+### Startup Indicators
+
+On boot:
+
+- Two quick flashes → WiFi connected
+- Three quick flashes → MQTT connected
+
+After startup completes, LED switches to normal state pattern.
+
+---
+
+## Install Install
+
+### 1. Find install area
+Decide and find the installation area near your garage opener. **Please** don't just put it on top of the door opener. You'll regret it down the line. Ideal to put it on your ceiling, 2-4 feet away. Further = Better (Kinda)
+
+### 2. Install GarageLink Box
+Drill or screw or tape or whatever your GarageLink box into your installation area. If you are too cool to print the one I made, make your own. I don't care. Make sure your wire fits before fully installing it.
+
+### 3. Prepare and strip wires.
+Strip your low-voltage wire to length and expose both ends on each side. Connect an optional LED to GPIO 12.
+
+### 4. Connect it up
+Connect everything up with the outlined wiring instructions above.
+
+### 5. Done!
+Plug in GarageLink and yay! If it doesn't work, check logs, and *please* feel free to create an issue on GitHub.
