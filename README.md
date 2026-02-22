@@ -147,92 +147,12 @@ The table is what setting, and then which variable that setting is.
 >Make sure all of the necessary fields have been edited in `garage.py`
 
 ---
+## Status LED
 
-## LED Status Behavior
+- GarageLink includes support for a recommended status LED.
+- Connects to GP17 and GND
 
-GarageLink includes a single status LED to communicate system state without needing to check Home Assistant.
-
-The LED provides real-time feedback about:
-- WiFi status
-- MQTT connection status
-- Door state
-- Movement
-- Errors
-
----
-
-## LED States
-
-### Solid ON (Green)
-System is healthy.
-
-- WiFi connected
-- MQTT connected
-- Door state is known
-- No errors present
-
-If the door is fully closed, the LED will remain solid.
-
----
-
-### Slow Blink (500ms on / 500ms off)
-Door is currently moving.
-
-States:
-- `OPENING`
-- `CLOSING`
-
-This indicates an active relay trigger or detected movement.
-
----
-
-### Brief Off Pulse Every Few Seconds
-Door is OPEN.
-
-The LED stays mostly on but briefly turns off at intervals to indicate:
-- System healthy
-- Door not closed
-
-This provides a subtle reminder that the garage is open.
-
----
-
-### Double Blink Pattern (Two quick flashes, pause)
-Door state is unknown or manually stopped.
-
-States:
-- `UNKNOWN`
-- `STOPPED`
-
-This usually happens:
-- After reboot
-- Before state sync
-- If movement detection is inconclusive
-
----
-
-### LED OFF
-System is not connected to MQTT.
-
-Possible causes:
-- WiFi disconnected
-- MQTT broker unavailable
-- Reconnecting state
-
-If reconnecting, the LED may perform short periodic flashes.
-
----
-
-### Startup Indicators
-
-On boot:
-
-- Two quick flashes → WiFi connected
-- Three quick flashes → MQTT connected
-
-After startup completes, LED switches to normal state pattern.
-
----
+- Error Codes and meanings are available in the docs section of this repo.
 
 ## Install Install
 
