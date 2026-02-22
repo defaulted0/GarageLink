@@ -150,7 +150,7 @@ The table is what setting, and then which variable that setting is.
 ## Status LED
 
 - GarageLink includes support for a recommended status LED.
-- Connects to GP17 and GND
+- Connects to GP12 and GND
 
 - Error Codes and meanings are available in the docs section of this repo.
 
