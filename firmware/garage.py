@@ -18,33 +18,28 @@ from umqtt.simple import MQTTClient  # type: ignore
 WIFI_SSID = "YOUR_WIFI_NAME"
 WIFI_PASS = "YOUR_WIFI_PASSWORD"
 
-# MQTT broker (usually Home Assistant IP running Mosquitto)
-MQTT_BROKER = ""
+MQTT_BROKER = ""     # <--- usually just the ip of your homeassistant host
 MQTT_PORT   = 1883
 MQTT_USER   = ""
 MQTT_PASS   = ""
 
-# Unique base topic for this controller
 BASE_TOPIC  = "pico2w/garage1"
 
 # Relay output (your relay IN2 is on GP17)
 RELAY_PIN = 17
-RELAY_ACTIVE_LOW = True      # most opto relay boards trigger LOW
+RELAY_ACTIVE_LOW = True
 
 # Pulse duration (button press length)
 PULSE_MS   = 500
-LOCKOUT_MS = 3000            # ignore rapid re-triggers
+LOCKOUT_MS = 3000
 
-# Estimated travel time (only used for OPENING/CLOSING animation)
+# Estimated travel time (used for opening/closing status)
 TRAVEL_MS = 14000
 IGNORE_WHILE_MOVING = True
 
 # Status LED
 LED_PIN = 12
 LED_ACTIVE_HIGH = True
-
-# Optional: second door (hardware only for now; code supports single door)
-# RELAY_PIN_2 = 16
 
 # Door position sensor (reed) - OFF by default
 USE_DOOR_SENSOR = False
@@ -70,14 +65,12 @@ SYNC_TOPIC   = BASE_TOPIC + "/sync"          # HA -> Pico (mark open/closed)
 STATUS_TOPIC = BASE_TOPIC + "/status"        # Pico -> HA (cover state)
 STATE_TOPIC  = BASE_TOPIC + "/door_state"    # Pico -> HA (binary sensor if reed enabled)
 AVAIL_TOPIC  = BASE_TOPIC + "/availability"  # online/offline
-ALERT_TOPIC  = BASE_TOPIC + "/alert"         # Pico -> HA (text alerts)
+ALERT_TOPIC  = BASE_TOPIC + "/alert"         
 
 DISCOVERY_PREFIX = "homeassistant"
 
 
-# ----------------------------
-# LED helpers (non-blocking patterns)
-# ----------------------------
+# LED helpers
 wifi_ok = False
 mqtt_ok = False
 led_state = "UNKNOWN"
@@ -113,16 +106,6 @@ def led_blink(led, count=1, on_ms=120, off_ms=120):
         time.sleep_ms(off_ms)
 
 def led_tick(led, est_state_now: str):
-    """
-    Patterns:
-    - mqtt_ok True:
-        CLOSED  -> solid ON
-        OPEN    -> mostly ON with brief OFF tick every 3s
-        OPENING/CLOSING -> 500ms blink
-        UNKNOWN/STOPPED -> double blink every ~3s
-      mqtt_ok False:
-        OFF (bad). If led_trying True, 1 short blink every 2s.
-    """
     global _led_last_ms, _led_phase, _led_on
 
     if led is None:
@@ -139,7 +122,7 @@ def led_tick(led, est_state_now: str):
             _led_last_ms = now
             return
 
-        # trying: short blink every 2s
+        # trying
         if _led_phase == 0:
             led_set(led, True)
             _led_on = True
@@ -183,7 +166,7 @@ def led_tick(led, est_state_now: str):
             led_set(led, _led_on)
         return
 
-    # UNKNOWN/STOPPED: double blink every ~3s
+    # unknown/stopped
     if _led_phase == 0:
         led_set(led, True)
         _led_on = True
@@ -209,9 +192,7 @@ def led_tick(led, est_state_now: str):
         _led_last_ms = now
 
 
-# ----------------------------
-# WiFi/MQTT
-# ----------------------------
+# wifi/mqtt
 def wifi_connect(led=None):
     global wifi_ok
     wlan = network.WLAN(network.STA_IF)
@@ -219,7 +200,7 @@ def wifi_connect(led=None):
     print("[WIFI] Connecting to:", WIFI_SSID)
 
     try:
-        hostname = "pico2w-garagelink-" + ubinascii.hexlify(machine.unique_id())[-4:].decode()
+        hostname = "garagelink-" + ubinascii.hexlify(machine.unique_id())[-4:].decode()
         wlan.config(dhcp_hostname=hostname)
     except Exception:
         pass
@@ -268,15 +249,13 @@ def mqtt_connect(client_id, will_topic, will_msg, led=None):
     return c
 
 
-# ----------------------------
 # Home Assistant Discovery (MQTT)
-# ----------------------------
 def publish_discovery(client, unique, device_name):
     # Cover entity
     cover_id = unique + "_cover"
     cover_cfg_topic = f"{DISCOVERY_PREFIX}/cover/{cover_id}/config"
     cover_cfg = {
-        "name": "Garage Door",
+        "name": "GarageLink",   # just rename in homeassistant
         "unique_id": cover_id,
         "command_topic": CMD_TOPIC,
         "state_topic": STATUS_TOPIC,
@@ -366,11 +345,7 @@ def publish_discovery(client, unique, device_name):
     }
     client.publish(sync_closed_cfg_topic, ujson.dumps(sync_closed_cfg), retain=True)
     print("[MQTT] Discovery sync buttons published")
-
-
-# ----------------------------
-# Relay control (Hi-Z idle fix)
-# ----------------------------
+# Relay control
 def make_relay(pin_num):
     pin = machine.Pin(pin_num, machine.Pin.IN)  # Hi-Z idle
     print("[RELAY] Idle set to Hi-Z (Pin.IN) on GP", pin_num)
@@ -394,19 +369,13 @@ def relay_pulse(relay_pin, led=None):
 
     print("[RELAY] Returned to Hi-Z (Pin.IN)")
 
-
-# ----------------------------
 # Door sensor (reed) helper
-# ----------------------------
 def read_door_state(door_pin):
     v = door_pin.value()
     is_open = (v == 0) if DOOR_OPEN_WHEN_PIN_LOW else (v == 1)
     return "OPEN" if is_open else "CLOSED"
 
-
-# ----------------------------
 # Vibration helper
-# ----------------------------
 def vib_active(vpin):
     v = vpin.value()
     return (v == 1) if VIB_ACTIVE_HIGH else (v == 0)
@@ -438,7 +407,7 @@ if USE_VIBRATION:
     print("[VIB] Enabled on GP", VIB_PIN)
 
 # State machine
-est_state = "UNKNOWN"  # UNKNOWN/OPENING/CLOSING/OPEN/CLOSED/STOPPED
+est_state = "UNKNOWN"  # UNKNOWN/OPENING/CLOSING/OPEN/CLOSED/STOPPED Must open or close first to set state on boot!
 move_end_ms = None
 last_press_ms = 0
 
